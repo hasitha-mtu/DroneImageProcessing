@@ -2,7 +2,7 @@ import json
 import sys
 import time
 import os
-from api.utils import request_url, get_request, post_request
+from api_utils import request_url, get_request, post_request
 from utils import get_image_list
 
 USERNAME = "hasitha"
@@ -27,7 +27,7 @@ def get_projects():
     token = get_token(USERNAME, PASSWORD)
     print(f"get_projects|url : {url}")
     api_response = get_request(url, token=token)
-    print(f"get_projects|api_response : {api_response}")
+    print(f"get_projects|api_response : {api_response.json()}")
     return api_response.json()
 
 def create_project(project_name):
@@ -68,7 +68,7 @@ def get_project_task(project_id, task_id):
     print(f"get_project_task|url : {url}")
     token = get_token(USERNAME, PASSWORD)
     api_response = get_request(url,token=token)
-    print(f"get_project_task|api_response : {api_response}")
+    print(f"get_project_task|api_response : {api_response.json()}")
     return api_response.json()
 
 def download_asset(download_dir, project_id, task_id, asset):
@@ -96,17 +96,32 @@ def download_asset(download_dir, project_id, task_id, asset):
         time.sleep(5)
         download_asset(download_dir, project_id, task_id, asset)
 
-
 # if __name__ == "__main__":
-#     project_id = create_project("testing2")
-#     project_id, task_id = create_project_task(IMAGE_DIR, project_id, [{'name': "orthophoto-resolution", 'value': 24}])
-#     dir_path = f"../download/project_id_{project_id}"
-#     download_asset(dir_path, project_id, task_id, 'orthophoto.tif')
+#     projects = get_projects()
+#     for project in projects:
+#         project_id = project['id']
+#         tasks = project['tasks']
+#         if tasks:
+#             task_id = tasks[0]
+#             get_project_task(project_id, task_id)
 
 if __name__ == "__main__":
-    project_id = 15
-    project_info = get_project(project_id)
-    task_id = project_info['tasks'][0]
-    get_project_task(project_id, task_id)
+    project_id = create_project("testing3")
+    # project_id, task_id = create_project_task(IMAGE_DIR, project_id, [{'name': "orthophoto-resolution", 'value': 24}])
+    # auto-boundary:true, dsm:true, dem-resolution:2, pc-quality:high
+    project_id, task_id = create_project_task(IMAGE_DIR, project_id, [
+        {'name': 'auto-boundary', 'value': True},
+        {'name': 'dsm', 'value': True},
+        {'name': 'dem-resolution', 'value': '2'},
+        {'name': 'pc-quality', 'value': 'high'}
+    ])
     dir_path = f"../download/project_id_{project_id}"
-    download_asset(dir_path, project_id, task_id, 'orthophoto.tif')
+    download_asset(dir_path, project_id, task_id, 'dsm.tif')
+
+# if __name__ == "__main__":
+#     project_id = 15
+#     project_info = get_project(project_id)
+#     task_id = project_info['tasks'][0]
+#     get_project_task(project_id, task_id)
+#     dir_path = f"../download/project_id_{project_id}"
+#     download_asset(dir_path, project_id, task_id, 'orthophoto.tif')
