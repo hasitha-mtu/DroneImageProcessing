@@ -8,11 +8,11 @@ from utils import get_image_list
 USERNAME = "hasitha"
 PASSWORD = "hasdha.1"
 IMAGE_DIR ='../data/DJI_202311211138_007_Create-Area-Route12'
+MAX_TASK_WAITING_SECONDS = 100
 
 # Authentication
 def get_token(username, password):
     url = request_url("token-auth/")
-    print(f"get_token|url : {url}")
     api_response = post_request(url,
                                 data={'username': username, 'password': password})
     if 'token' in api_response:
@@ -45,13 +45,12 @@ def get_project(project_id):
     token = get_token(USERNAME, PASSWORD)
     print(f"get_projects|url : {url}")
     api_response = get_request(url, token=token)
-    print(f"get_projects|api_response : {api_response}")
+    print(f"get_projects|api_response : {api_response.json()}")
     return api_response.json()
 
 def create_project_task(dir_path, project_id, options):
     images = get_image_list(dir_path)
     print(f"create_project_task|images : {images}")
-    # options = json.dumps([{'name': "orthophoto-resolution", 'value': 24}])
     options = json.dumps(options)
     token = get_token(USERNAME, PASSWORD)
     url = request_url(f"projects/{project_id}/tasks/")
@@ -83,7 +82,7 @@ def download_asset(download_dir, project_id, task_id, asset):
         print(f"download_asset|api_response : {api_response}")
         asset_path = f"{download_dir}/{asset}"
         with open(asset_path, 'wb') as f:
-            print("download_asset|Downloading, hold on...")
+            print("download_asset|Downloading, in progress...")
             for chunk in api_response.iter_content(chunk_size=1024):
                 if chunk:
                     f.write(chunk)
@@ -92,8 +91,9 @@ def download_asset(download_dir, project_id, task_id, asset):
         print("download_asset|Task failed: {}".format(task_info))
         sys.exit(1)
     else:
-        print(f"download_asset|Processing, current progress {task_info['running_progress']} hold on...")
-        time.sleep(5)
+        print(f"download_asset|Current running progress is {task_info['running_progress']*100}%")
+        sleep_time = int(MAX_TASK_WAITING_SECONDS * (1 - task_info['running_progress']))
+        time.sleep(sleep_time)
         download_asset(download_dir, project_id, task_id, asset)
 
 # if __name__ == "__main__":
@@ -105,18 +105,32 @@ def download_asset(download_dir, project_id, task_id, asset):
 #             task_id = tasks[0]
 #             get_project_task(project_id, task_id)
 
+# if __name__ == "__main__":
+#     project_id = create_project("testing3")
+#     # project_id, task_id = create_project_task(IMAGE_DIR, project_id, [{'name': "orthophoto-resolution", 'value': 24}])
+#     # auto-boundary:true, dsm:true, dem-resolution:2, pc-quality:high
+#     project_id, task_id = create_project_task(IMAGE_DIR, project_id, [
+#         {'name': 'auto-boundary', 'value': True},
+#         {'name': 'dsm', 'value': True},
+#         {'name': 'dem-resolution', 'value': '2'},
+#         {'name': 'pc-quality', 'value': 'high'}
+#     ])
+#     dir_path = f"../download/project_id_{project_id}"
+#     download_asset(dir_path, project_id, task_id, 'dsm.tif')
+
 if __name__ == "__main__":
-    project_id = create_project("testing3")
+    project_id = create_project("testing4")
     # project_id, task_id = create_project_task(IMAGE_DIR, project_id, [{'name': "orthophoto-resolution", 'value': 24}])
     # auto-boundary:true, dsm:true, dem-resolution:2, pc-quality:high
     project_id, task_id = create_project_task(IMAGE_DIR, project_id, [
         {'name': 'auto-boundary', 'value': True},
+        {'name': 'dtm', 'value': True},
         {'name': 'dsm', 'value': True},
-        {'name': 'dem-resolution', 'value': '2'},
+        {'name': 'smrf', 'value': True},
         {'name': 'pc-quality', 'value': 'high'}
     ])
     dir_path = f"../download/project_id_{project_id}"
-    download_asset(dir_path, project_id, task_id, 'dsm.tif')
+    download_asset(dir_path, project_id, task_id, 'dtm.tif')
 
 # if __name__ == "__main__":
 #     project_id = 15
